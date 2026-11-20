@@ -55,6 +55,7 @@
   function save() {
     try { localStorage.setItem(KEY, JSON.stringify(D)); }
     catch (e) { toast('พื้นที่เก็บข้อมูลเต็ม — ลองลบรูปพื้นหลัง'); }
+    if (window.TG) TG.queue(D);
   }
   function toast(msg) {
     const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg;
@@ -227,6 +228,7 @@
         <label class="it">${tile('down', '#4a6fa5')}<span class="t">กู้คืนจากไฟล์สำรอง<small>รวมกับงานเดิม ไม่ลบของเก่า</small></span>${chev}<input type="file" accept="application/json,.json" id="imp" hidden></label>
         <button class="it" data-act="clearDone">${tile('check', '#8d8f96')}<span class="t">ลบงานที่ทำเสร็จแล้ว</span></button>
         <button class="it" data-act="wipe" style="color:var(--c1)">${tile('trash', '#d0533f')}<span class="t">ลบข้อมูลทั้งหมด</span></button></div>
+      ${window.TG ? TG.settingsHTML() : ''}
       <div class="lbl">เพิ่มงานด้วยประโยคเดียว</div><div class="card tip">ตัวอย่าง <code>พรุ่งนี้ 9 โมง ส่งรายงาน ด่วน</code><br>
         <b>วัน</b> วันนี้ · พรุ่งนี้ · มะรืน · วันจันทร์ · ศุกร์หน้า · 25 ธ.ค. · 5/1 · ที่ 15<br>
         <b>เวลา</b> 9 โมง · บ่าย 2 · 2 ทุ่ม · 14:30 · เที่ยง · ตี 5 · …ครึ่ง<br>
@@ -348,7 +350,7 @@
   }
   document.addEventListener('click', ev => {
     const el = ev.target.closest('[data-act]'); if (!el) return;
-    const fn = acts[el.dataset.act]; if (fn) fn(el, ev);
+    const fn = acts[el.dataset.act]; if (fn) fn(el, ev); else if (window.TG) TG.act(el.dataset.act, el, { D: () => D, render, toast });
   });
   document.addEventListener('change', async ev => {
     if (ev.target.id === 'wp-photo' && ev.target.files[0]) {
