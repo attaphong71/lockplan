@@ -1,0 +1,48 @@
+name: LockPlan reminders
+on:
+  schedule:
+    - cron: '*/15 * * * *'   # เช็กทุก 15 นาที
+    - cron: '17 3 1 * *'     # กันไม่ให้ GitHub ปิด workflow เมื่อ repo เงียบเกิน 60 วัน
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: lockplan-remind
+  cancel-in-progress: false
+jobs:
+  remind:
+    if: github.event.schedule != '17 3 1 * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: remind.mjs
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/cache/restore@v4
+        with:
+          path: state
+          key: remind-state-${{ github.run_id }}
+          restore-keys: remind-state-
+      - run: node remind.mjs
+        env:
+          LOCKPLAN_TELEGRAM: ${{ secrets.LOCKPLAN_TELEGRAM }}
+          APP_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: state
+          key: remind-state-${{ github.run_id }}
+  keepalive:
+    if: github.event.schedule == '17 3 1 * *'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          git config user.name "lockplan-bot"
+          git config user.email "lockplan-bot@users.noreply.github.com"
+          date -u > .keepalive
+          git add .keepalive && git commit -m "keepalive" && git push
